@@ -228,7 +228,7 @@ operations:
 | `is_arn` | bool | Override default ARN field detection |
 | `is_attribute` | bool | Field is part of an Attributes map (SNS/SQS pattern) |
 | `is_secret` | bool | Field becomes a SecretKeyReference |
-| `is_secret_reference` | bool | Field becomes a name/namespace-only SecretReference when the controller owns the data-key convention |
+| `is_tls_secret` | bool | Field becomes a name/namespace-only TlsSecretReference when the controller owns the kubernetes.io/tls data-key convention |
 
 ### Immutability
 
