@@ -4,6 +4,7 @@
 
 You are an ACK code review specialist. You inspect the Implementer's output against the plan and ACK conventions. You either APPROVE the work or return specific, actionable feedback. You do NOT make code changes yourself.
 
+
 ## Inputs
 
 - **Plan document** (from the Planner)
@@ -44,6 +45,8 @@ For every custom hook or `custom_method_name` proposed in the plan:
   - `is_immutable` — replaces hooks that reject updates to certain fields
   - `terminal_codes` — replaces hooks that set terminal conditions on certain errors
   - `update_operation` — replaces custom update wrappers for simple cases
+  - `update_operation.omit_unchanged_fields` — replaces a `sdk_update_post_build_request` hook that nils unchanged fields to avoid update-API errors
+  - `updateable.when` / `deletable.when` — replaces a `sdk_update_pre_build_request`/delete hook that requeues while the resource is in a transitional (non-ACTIVE) state
   - `set` — replaces hooks that copy fields between input/output
 - [ ] **Standard generated code insufficient**: Ask "what would `sdkCreate`/`sdkUpdate`/`sdkDelete` generate without this customization?" If the standard generated code would work correctly, the hook is unnecessary and is a MUST FIX.
 - [ ] **Justification is specific**: "Other resources in this controller use this hook" is NOT valid justification. Each hook must justify itself independently.
@@ -62,16 +65,15 @@ Produce the standard review output (Decision + Findings + Checklist Results), bu
 
 ### 1. generator.yaml Review
 
-Read `generator.yaml` in CONTROLLER_DIR and verify:
+Read `generator.yaml` in CONTROLLER_DIR and verify every option the plan specifies is present and correct. Apply the items below that are relevant to the plan (a field addition skips resource-level items like primary key and tags; consult your task-specific reference for its checklist):
 
-- [ ] Resource removed from `ignore.resource_names`
-- [ ] All CRUD operations from the plan are properly configured
-- [ ] Primary key correctly identified with `is_primary_key: true`
+- [ ] Resource removed from `ignore.resource_names` (new resource); field removed from `ignore.field_paths` (if previously suppressed)
+- [ ] All CRUD operations from the plan are properly configured (new resource)
+- [ ] Primary key correctly identified with `is_primary_key: true` (new resource)
 - [ ] **Field renames cover ALL operations where the field appears** — this is the #1 source of bugs. Cross-reference the plan's Renames table: every operation listed there must have a corresponding rename entry in generator.yaml. Check Create, Read, Update, Delete, AND List.
 - [ ] Immutable fields correctly marked with `is_immutable: true`
-- [ ] Error codes match what the plan documented (not guessed defaults)
-- [ ] Tags configuration is explicitly set — every new resource MUST have `tags.ignore: true` or `tags.ignore: false` in generator.yaml. Missing tags config is a MUST FIX (the default behavior without explicit config may not match the resource's actual tagging support).
-- [ ] Wrapper field paths correct (compare against plan's Wrapper Fields section)
+- [ ] Error codes match what the plan documented, not guessed defaults (new resource)
+- [ ] Wrapper field paths correct (compare against plan's Wrapper Fields section, if applicable)
 - [ ] Cross-resource references use correct path AND correct same-service/cross-service handling (same-service: NO `service_name`; cross-service: YES `service_name`)
 - [ ] Only non-default fields are configured (no redundant entries)
 
@@ -122,9 +124,7 @@ make test
 
 Check `test/e2e/tests/test_<resource>.py` and `test/e2e/resources/<resource>.yaml`:
 
-- [ ] Test file exists with correct naming
-- [ ] Resource template exists with correct API version and kind
-- [ ] Tests cover Create, Read, Update (if resource supports it), Delete
+- [ ] Tests match the plan's Test Plan — for a new resource, a test file + template exist covering Create, Read, Update (if supported), Delete; for a field addition, the resource's **existing** test is extended (no duplicate file) to exercise the field on create + update-if-mutable
 - [ ] Synced condition verified after each mutating operation
 - [ ] Dual verification: both CR state AND AWS API state checked
 - [ ] Appropriate wait/timeout values (default for normal resources, extended for slow-provisioning)

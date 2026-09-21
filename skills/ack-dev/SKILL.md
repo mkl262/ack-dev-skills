@@ -1,11 +1,6 @@
 ---
 name: ack-dev
-description: >-
-  Guide for AWS Controllers for Kubernetes (ACK) development. Use when working
-  in an ACK service controller repository or the code-generator. Covers setting up
-  dev environments, creating new controllers, adding resources or fields to CRDs,
-  configuring code generation, writing custom hooks, implementing cross-resource
-  references, writing E2E tests, and submitting PRs.
+description: "Guide for AWS Controllers for Kubernetes (ACK) development. Use when working in an ACK service controller repository or the code-generator. Covers setting up dev environments, creating new controllers, adding resources or fields to CRDs, configuring code generation, writing custom hooks, implementing cross-resource references, writing E2E tests, and submitting PRs."
 license: Apache-2.0
 metadata:
   author: ACK Team
@@ -55,7 +50,9 @@ These apply everywhere. They are not repeated in individual sections.
 SERVICE=<service> AWS_SDK_GO_VERSION=v1.41.0 make build-controller
 ```
 
-Set `AWS_SDK_GO_VERSION` explicitly for reproducibility. Use the core SDK version (`github.com/aws/aws-sdk-go-v2`), not the service-specific version.
+Set `AWS_SDK_GO_VERSION` explicitly for reproducibility. It takes the **core** `aws-sdk-go-v2` release tag (e.g. `v1.41.0`).
+
+**Two model-source variants exist, and the service-specific one wins.** Code-gen fetches the Smithy model from either the core tag (`AWS_SDK_GO_VERSION` / metadata `aws_sdk_go_version`) or the per-service tag (`AWS_SERVICE_SDK_VERSION` / metadata `aws_service_sdk_version`, e.g. `service/<svc>/v1.29.0`). When the service-specific version is set it **takes precedence** and the core version is ignored for model fetching. When neither env var is passed, `make build-controller` reads both keys from `apis/<version>/ack-generate-metadata.yaml`. The two tags can resolve to **different model contents**, so a field/shape present at one version may be absent at another — always confirm against the source code-gen will actually use (see Troubleshooting → "Field not appearing in CRD").
 
 **Only configure non-default fields in generator.yaml.** If a field uses all defaults (mutable, no references, etc.), don't add it. Less config = less maintenance.
 
@@ -371,6 +368,11 @@ For PR ordering when building new controllers, see [pr-workflow.md](references/p
 - [Contributing to Code-Generator](references/contributing-codegen.md) — Read when making changes to the code-generator itself
 - [PR Workflow](references/pr-workflow.md) — Read when planning PR order for new controllers or cutting releases
 - [Troubleshooting](references/troubleshooting.md) — Read when debugging build failures, controller issues, or test problems
+- [generator.yaml Reference](../../references/generator-yaml-reference.md) — Complete documentation of every `generator.yaml` option (top-level, resource-level, operations, field-level, renames, exceptions, hooks). The authority for "is there a declarative option for this?"
+- [New Resource Checklist](../../references/new-resource-checklist.md) — Feasibility checks, API investigation steps, and the **Configuration Decision Table** (which field-level option applies when).
+- [Bug Fix Patterns](../../references/bug-fix-patterns.md) — 10 common root causes in closed ACK bugs and their fixes.
+- [SDK Version Resolution](../../references/sdk-version-resolution.md) — How to resolve and read the SDK model version code-gen will actually use (`ack-generate-metadata.yaml` + `go.mod`). The #1 add-field gotcha.
+- [Adding a Single Field](../../references/field-addition.md) — Task-specific supplement to the generic Implementer/Reviewer SOPs for adding one field to an existing resource. Read this when the task is a single-field addition.
 
 Quick search across references:
 ```bash

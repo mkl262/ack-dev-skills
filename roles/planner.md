@@ -15,20 +15,13 @@ You are an ACK resource planning specialist. Your job is to research a target AW
 
 ### Step 1: Locate the AWS API Model
 
-Find and read the API model JSON for the service from **aws-sdk-go-v2**.
+Resolve the SDK model version and read the model following **[SDK Version Resolution](../references/sdk-version-resolution.md)** — determine the version code-gen actually uses from the controller's `ack-generate-metadata.yaml` (+ `go.mod` for the concrete service tag), then read that exact version from the Go module cache. Do NOT read whichever `aws-sdk-go-v2` clone happens to be on disk — that is the single most common way this workflow goes wrong.
 
-**CRITICAL: Do NOT use aws-sdk-go (v1). It is deprecated and its models are outdated. Always use aws-sdk-go-v2.**
-
-Check these locations in order:
-1. Local aws-sdk-go-v2 clone (if available in the workspace): look for the service's Smithy model JSON under `models/` or `codegen/sdk-codegen/aws-models/`
-2. The Go module cache: look for `github.com/aws/aws-sdk-go-v2/service/<service>` in the controller's `go.sum`, then find the Smithy model in the cached module at `$GOPATH/pkg/mod/github.com/aws/aws-sdk-go-v2/...`
-3. AWS documentation via web
-
-**Never** look in `github.com/aws/aws-sdk-go/` (no `-v2` suffix) — that is the deprecated v1 SDK.
-
-From the model, extract:
+From the resolved model, extract:
 - All operations that reference this resource (match by input/output shape names)
 - The exact operation names for Create, Describe/Get, Update, Delete, List
+
+If a resource's operations (`Create<R>`, `Get<R>`, etc.) appear to be "missing," suspect you are reading the wrong version **before** concluding the API lacks them. If the resolved model source and the `go.mod` service module disagree on a shape, note it in Implementation Notes for a human to reconcile.
 
 ### Step 2: Map CRUD Operations
 
